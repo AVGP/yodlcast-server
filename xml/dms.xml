@@ -8,7 +8,7 @@
   <device>
     <dlna:X_DLNADOC>DMR-1.50</dlna:X_DLNADOC>
     <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-    <friendlyName>YodlCast</friendlyName>
+    <friendlyName>$NAME</friendlyName>
     <manufacturer>Martin Splitt</manufacturer>
     <manufacturerURL/>
     <modelDescription>YodlCast media server</modelDescription>

@@ -13,15 +13,15 @@ import (
 const DeviceUUID = "c000ffee-cafe-c0c0-dead-c000ffffeeee"
 
 // StartXMLServer starts an HTTP server to serve the XML files for UPnP
-func StartXMLServer(ip *net.IP) {
+func StartXMLServer(ip *net.IP, deviceName *string) {
 	addr := fmt.Sprintf("%s:8040", ip.To4())
 	xmlServeMux := http.NewServeMux()
-	xmlServeMux.HandleFunc("/", makeXMLHandler(ip))
+	xmlServeMux.HandleFunc("/", makeXMLHandler(ip, deviceName))
 	log.Printf("XML server listening at %s\n", ip)
 	http.ListenAndServe(addr, xmlServeMux)
 }
 
-func makeXMLHandler(ip *net.IP) func(http.ResponseWriter, *http.Request) {
+func makeXMLHandler(ip *net.IP, deviceName *string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Serving XML %s\n", r.URL.Path)
 		tplContent, err := ioutil.ReadFile("." + r.URL.Path)
@@ -33,6 +33,7 @@ func makeXMLHandler(ip *net.IP) func(http.ResponseWriter, *http.Request) {
 
 		content := regexp.MustCompile("\\$UUID").ReplaceAllLiteralString(string(tplContent), DeviceUUID)
 		content = regexp.MustCompile("\\$IP").ReplaceAllLiteralString(content, ip.To4().String())
+		content = regexp.MustCompile("\\$NAME").ReplaceAllLiteralString(content, *deviceName)
 		w.Write([]byte(content))
 	}
 }

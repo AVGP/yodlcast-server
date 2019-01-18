@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,14 +15,15 @@ import (
 
 // StartContentDirectorySvc starts the web server
 // for eventing and SOAP actions of the ContentDirectory service
-func StartContentDirectorySvc(ip *net.IP) {
+func StartContentDirectorySvc(ip *net.IP, rootFolderPath *string) {
 	addr := fmt.Sprintf("%s:8060", ip)
 	log.Printf("ContentDirectory service starting on %s\n", addr)
 
 	serverMux := http.NewServeMux()
 
 	serverMux.HandleFunc("/cds_evt", eventHandler)
-	serverMux.HandleFunc("/cds_ctrl", makeCtrlHandler(ip))
+	_, rootFolder := path.Split(*rootFolderPath)
+	serverMux.HandleFunc("/cds_ctrl", makeCtrlHandler(ip, &rootFolder))
 	http.ListenAndServe(addr, serverMux)
 }
 
@@ -37,7 +39,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(500) // TODO: Implement subscriptions
 }
 
-func makeCtrlHandler(ip *net.IP) func(http.ResponseWriter, *http.Request) {
+func makeCtrlHandler(ip *net.IP, rootFolderName *string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		action := strings.ToLower(
 			regexp.MustCompile("\".*#(.+)\"").FindStringSubmatch(
@@ -51,7 +53,7 @@ func makeCtrlHandler(ip *net.IP) func(http.ResponseWriter, *http.Request) {
 			log.Printf("Browse...\n")
 			body, _ := ioutil.ReadAll(r.Body)
 			log.Printf("Request body: %s\n", body)
-			browse(string(body), ip, w)
+			browse(string(body), ip, rootFolderName, w)
 		default:
 			log.Printf("Unknown action '%s'\n", action)
 		}
@@ -59,17 +61,17 @@ func makeCtrlHandler(ip *net.IP) func(http.ResponseWriter, *http.Request) {
 }
 
 // TODO: Does not support recursion yet :(
-func browse(request string, ip *net.IP, w http.ResponseWriter) {
+func browse(request string, ip *net.IP, rootFolderName *string, w http.ResponseWriter) {
 	mediaBaseURL := fmt.Sprintf("http://%s:8000/", ip.String())
 	objectID, _ := strconv.Atoi(regexp.MustCompile("<ObjectID>(.+)</ObjectID>").FindStringSubmatch(request)[1])
 	numItems := 1
 	itemsResponse := ""
 	// return the root folder
 	if objectID == 0 {
-		itemsResponse = `&lt;container id=&quot;1&quot; parentID=&quot;0&quot; restricted=&quot;1&quot;&gt;
-			&lt;dc:title&gt;Photos&lt;/dc:title&gt;
+		itemsResponse = fmt.Sprintf(`&lt;container id=&quot;1&quot; parentID=&quot;0&quot; restricted=&quot;1&quot;&gt;
+			&lt;dc:title&gt;%s&lt;/dc:title&gt;
 			&lt;upnp:class&gt;object.container&lt;/upnp:class&gt;
-		&lt;/container&gt;`
+		&lt;/container&gt;`, *rootFolderName)
 	} else {
 		entries, _ := ioutil.ReadDir("./media")
 		for index, entry := range entries {
