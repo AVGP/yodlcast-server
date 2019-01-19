@@ -13,6 +13,7 @@ Currently implemented features:
 
 The most important missing bits right now:
 
+* Implement the DLNA requirements.
 * Proper directory listing with nesting for the ContentDirectory service.
 * Handle errors in ContentDirectory service.
 * Implement events for ContentDirectory service.
