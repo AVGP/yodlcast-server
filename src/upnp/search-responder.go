@@ -41,6 +41,7 @@ func RespondToSearch(searchType string, localIP *net.IP) {
 			(ssdpAllMatcher.MatchString(msg) || searchTypeMatcher.MatchString(msg)) {
 			log.Printf("M-SEARCH from %v: %v\n", src, string(buffer))
 			sendSearchResponse(conn, src, localIP)
+			Announce(localIP)
 		}
 	}
 }
@@ -50,10 +51,11 @@ func sendSearchResponse(conn *net.UDPConn, dstAddr *net.UDPAddr, localIP *net.IP
 		"HTTP/1.1 200 OK",
 		"CACHE-CONTROL: max-age=1800",
 		"EXT:",
-		"SERVER: unix/5.1 UPnP/1.1 YodlCastServer/1.0",
+		"SERVER: unix/5.1 UPnP/1.0 YodlCastServer/1.0 DLNADOC/1.50",
 		"ST: urn:schemas-upnp-org:device:MediaServer:1",
 		"USN: uuid:::urn:schemas-upnp-org:device:MediaServer:1",
 		fmt.Sprintf("Location: http://%s:8040/xml/dms.xml", localIP.String()))
 
+	log.Printf("Announcing to %v:\n%s\n", dstAddr, announcementMsg)
 	conn.WriteTo([]byte(announcementMsg), dstAddr)
 }

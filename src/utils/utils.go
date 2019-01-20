@@ -5,6 +5,10 @@ import (
 	"net"
 )
 
+// DeviceUUID is the UPnP UUID we are broadcasting and announcing
+const DeviceUUID = "c000ffee-cafe-c0c0-dead-c000ffffeeee"
+
+// GetLocalIP returns the first non-loopback IPv4 address of this device
 func GetLocalIP() (net.IP, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
